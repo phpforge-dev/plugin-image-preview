@@ -14,7 +14,8 @@
     "main": "workbench.js",
     "style": "workbench.css",
     "services": [
-      "readImage"
+      "readImage",
+      "tree"
     ]
   }
 }

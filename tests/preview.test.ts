@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
 import {activate} from '../src/preview';
+import {fittedScale} from '../src/zoom';
 function harness(path:string,text=''){
  const dom=new JSDOM('<div id="navigation"></div><div id="editor"></div>',{url:'https://ide.test'});const win=dom.window;
  for(const key of ['document','DOMParser','XMLSerializer','localStorage','KeyboardEvent'])globalThis[key]=win[key];
@@ -19,9 +20,19 @@ function harness(path:string,text=''){
  const controller=activate(sdk);
  return {dom,controller,pending,host,resolveRead:(s:string)=>resolveRead(s),edit(value:string){text=value;version++;listeners.get('content')?.forEach(fn=>fn());},dispose(){for(const c of clean.reverse())typeof c==='function'?c():c.dispose();},get disconnected(){return disconnected;},get listenerCount(){return [...listeners.values()].reduce((n,s)=>n+s.size,0);}};
 }
+test('empty viewport keeps natural size instead of collapsing the image',()=>{
+ assert.equal(fittedScale(1254,1254,0,0),undefined);
+ assert.equal(fittedScale(16,16,400,300),8);
+});
 test('image loading, zoom, keyboard and disposal restore editor',async()=>{
- const h=harness('photo.png');assert.equal(h.host.hidden,true);h.resolveRead('data:image/png;base64,AA==');await Promise.resolve();const image=h.pending[0];image.onload();assert.equal(document.querySelector('#image-preview')?.getAttribute('data-state'),'ready');assert.match(document.querySelector('.image-info')!.textContent!,/80 × 40/);
+ const h=harness('photo.png');assert.equal(h.host.hidden,true);h.resolveRead('data:image/png;base64,AA==');await Promise.resolve();const image=h.pending[0];image.onload();assert.equal(document.querySelector('#image-preview')?.getAttribute('data-state'),'ready');assert.equal(image.style.width,'80px');assert.match(document.querySelector('.image-info')!.textContent!,/80 × 40/);
  document.querySelector<HTMLButtonElement>('#image-actual')!.click();assert.equal(image.style.width,'80px');document.querySelector<HTMLElement>('.image-viewport')!.dispatchEvent(new KeyboardEvent('keydown',{key:'+'}));assert.equal(image.style.width,'100px');
  h.dispose();assert.equal(h.host.hidden,false);assert.equal(h.listenerCount,0);assert.equal(h.disconnected,true);assert.equal(document.querySelector('#image-preview'),null);image.onload();assert.equal(document.querySelector('#image-preview'),null);h.dom.window.close();
 });
 test('late image read cannot revive a disabled preview',async()=>{const h=harness('photo.png');h.dispose();h.resolveRead('data:image/png;base64,AA==');await Promise.resolve();assert.equal(h.pending.length,0);assert.equal(h.host.hidden,false);h.dom.window.close();});
+test('fit enlarges a small logo to the viewport',async()=>{
+ const h=harness('logo.png');const viewport=document.querySelector<HTMLElement>('.image-viewport')!;
+ Object.defineProperty(viewport,'clientWidth',{value:480});Object.defineProperty(viewport,'clientHeight',{value:360});
+ h.resolveRead('data:image/png;base64,AA==');await Promise.resolve();const image=h.pending[0];image.onload();
+ assert.equal(image.style.width,'432px');h.dispose();h.dom.window.close();
+});
