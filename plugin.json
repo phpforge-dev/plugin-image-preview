@@ -1,0 +1,20 @@
+{
+  "id": "phpforge.image-preview",
+  "name": "Image Preview",
+  "version": "1.0.0",
+  "minIdeVersion": "0.2.13",
+  "main": "main.js",
+  "description": "Image viewing, zoom, transparency backgrounds and disk reload.",
+  "permissions": [
+    "project.read",
+    "workbench"
+  ],
+  "workbench": {
+    "apiVersion": 1,
+    "main": "workbench.js",
+    "style": "workbench.css",
+    "services": [
+      "readImage"
+    ]
+  }
+}
