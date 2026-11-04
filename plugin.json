@@ -1,7 +1,7 @@
 {
   "id": "phpforge.image-preview",
   "name": "Image Preview",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minIdeVersion": "0.2.13",
   "main": "main.js",
   "description": "Image viewing, zoom, transparency backgrounds and disk reload.",
